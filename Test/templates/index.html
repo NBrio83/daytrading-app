@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daytrading — Diagramanalys</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header class="site-header">
+      <div class="logo-text">Daytrading</div>
+    </header>
+
+    <!-- Upload form -->
+    <div class="upload-card">
+      <h2>Ladda upp diagram</h2>
+      <p>Ladda upp en eller flera skärmdumpar av handeldiagram. AI:n analyserar och identifierar entry-zoner, stop loss och targets på svenska.</p>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <div class="file-row">
+          <input type="file" id="imageInput" name="images"
+                 accept="image/jpeg,image/png,image/webp"
+                 multiple required>
+          <button type="submit" class="btn-analyze">Analysera diagram</button>
+        </div>
+        <div id="previewArea"></div>
+      </form>
+      <div id="loadingState" style="display:none">
+        <div class="spinner"></div>
+        <span>Analyserar diagram med Claude AI&hellip;</span>
+      </div>
+      <div id="errorState" class="error-message" style="display:none"></div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsSection" style="display:none">
+
+      <!-- Title + current price -->
+      <div class="result-header">
+        <div class="result-title-group">
+          <h1 id="chartTitle" class="chart-title"></h1>
+          <p id="instrumentInfo" class="instrument-info"></p>
+        </div>
+        <div class="price-box">
+          <span id="currentPrice" class="current-price-value"></span>
+          <span class="current-price-label">Nuv. pris</span>
+        </div>
+      </div>
+
+      <!-- Market overview -->
+      <div class="dark-card">
+        <p id="marketOverview"></p>
+      </div>
+
+      <!-- Chart -->
+      <div class="dark-card chart-card">
+        <div class="chart-section-title">PRISNIVÅER &mdash; SHORT &amp; LONG SCENARION</div>
+        <div class="chart-wrap">
+          <canvas id="tradingChart"></canvas>
+        </div>
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-line sl"></span> Stop loss</span>
+          <span class="legend-item"><span class="legend-line entry"></span> Entry-zon</span>
+          <span class="legend-item"><span class="legend-line target"></span> Target</span>
+          <span class="legend-item"><span class="legend-line cur"></span> Nuv. pris</span>
+        </div>
+      </div>
+
+      <!-- SHORT scenario -->
+      <div class="scenario-card" id="shortCard"></div>
+
+      <!-- LONG scenario -->
+      <div class="scenario-card" id="longCard"></div>
+
+      <!-- Summary -->
+      <div class="dark-card" id="summaryCard"></div>
+
+    </div>
+  </div>
+
+  <script>
+  // ── Image previews ──────────────────────────────────────────────────────────
+  document.getElementById('imageInput').addEventListener('change', function () {
+    const area = document.getElementById('previewArea');
+    area.innerHTML = '';
+    Array.from(this.files).forEach(file => {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.onload = () => URL.revokeObjectURL(img.src);
+      area.appendChild(img);
+    });
+  });
+
+  // ── Form submit ─────────────────────────────────────────────────────────────
+  document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const btn = this.querySelector('.btn-analyze');
+    btn.disabled = true;
+    document.getElementById('loadingState').style.display = 'flex';
+    document.getElementById('errorState').style.display = 'none';
+    document.getElementById('resultsSection').style.display = 'none';
+
+    try {
+      const resp = await fetch('/analyze', { method: 'POST', body: new FormData(this) });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Okänt fel');
+      renderResults(data);
+      document.getElementById('resultsSection').style.display = 'block';
+    } catch (err) {
+      const el = document.getElementById('errorState');
+      el.style.display = 'block';
+      el.textContent = 'Fel: ' + err.message;
+    } finally {
+      document.getElementById('loadingState').style.display = 'none';
+      btn.disabled = false;
+    }
+  });
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  function esc(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function fmt(n) {
+    if (n == null) return '—';
+    const num = Number(n);
+    const parts = num.toFixed(num % 1 === 0 ? 0 : 2).split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return parts.join('.');
+  }
+
+  function rrColorClass(rrStr) {
+    return parseFloat(rrStr) >= 2 ? 'rr-high' : 'rr-low';
+  }
+
+  // ── Main render ─────────────────────────────────────────────────────────────
+  function renderResults(data) {
+    document.getElementById('chartTitle').textContent    = data.chart_title     || '';
+    document.getElementById('instrumentInfo').textContent = data.instrument_info || '';
+    document.getElementById('currentPrice').textContent  = fmt(data.current_price);
+    document.getElementById('marketOverview').innerHTML  =
+      '<strong>Marknadsläge:</strong> ' + esc(data.market_overview);
+
+    renderScenario(document.getElementById('shortCard'), data.short_scenario, 'short');
+    renderScenario(document.getElementById('longCard'),  data.long_scenario,  'long');
+
+    document.getElementById('summaryCard').innerHTML =
+      '<h3 class="summary-heading">Sammanfattning</h3><p>' + esc(data.summary) + '</p>';
+
+    renderTradingChart(data);
+  }
+
+  // ── Scenario card ───────────────────────────────────────────────────────────
+  function renderScenario(el, sc, type) {
+    const isShort  = type === 'short';
+    const badge    = isShort ? 'SHORT' : 'LONG';
+    const subtitle = isShort ? 'Primär trade' : 'Sekundär / reversal';
+    const displayLabel = (sc.label || '')
+      .replace(/\s*\(sälja\)/gi, '')
+      .replace(/\s*\(köpa\)/gi, '')
+      .trim();
+    const entryMid = (sc.entry_low + sc.entry_high) / 2;
+    const riskPts  = Math.round(Math.abs(isShort ? sc.stop_loss - entryMid : entryMid - sc.stop_loss));
+
+    const targets = ['t1', 't2', 't3'].filter(k => sc[k] != null).map(k => ({
+      key:       k,
+      label:     'TARGET ' + k[1],
+      price:     sc[k],
+      rr:        sc['rr_' + k] || '',
+      rewardPts: Math.round(Math.abs(isShort ? entryMid - sc[k] : sc[k] - entryMid))
+    }));
+
+    const levelBoxes = `
+      <div class="level-box entry-box">
+        <div class="level-label">ENTRY</div>
+        <div class="level-price entry-price">${fmt(sc.entry_low)} &mdash; ${fmt(sc.entry_high)}</div>
+      </div>
+      <div class="level-box sl-box">
+        <div class="level-label">STOP LOSS</div>
+        <div class="level-price sl-price">${fmt(sc.stop_loss)}</div>
+      </div>
+      ${targets.map(t => `
+        <div class="level-box target-box">
+          <div class="level-label">${t.label}</div>
+          <div class="level-price target-price">${fmt(t.price)}</div>
+        </div>
+      `).join('')}
+    `;
+
+    const tableRows = [
+      `<tr><td>Entry</td><td>${fmt(entryMid)}</td><td>—</td><td>—</td><td>—</td></tr>`,
+      `<tr><td>SL</td><td>${fmt(sc.stop_loss)}</td><td>${riskPts} pts</td><td>—</td><td>—</td></tr>`,
+      ...targets.map(t => `
+        <tr>
+          <td>${t.key.toUpperCase()}</td>
+          <td>${fmt(t.price)}</td>
+          <td>${riskPts}</td>
+          <td>${t.rewardPts}</td>
+          <td class="${rrColorClass(t.rr)}">${esc(t.rr)}</td>
+        </tr>
+      `)
+    ].join('');
+
+    el.innerHTML = `
+      <div class="scenario-header ${isShort ? 'short-header' : 'long-header'}">
+        <span class="scenario-badge ${isShort ? 'badge-short' : 'badge-long'}">${badge}</span>
+        <div class="scenario-title-wrap">
+          <div class="scenario-title">${esc(displayLabel)}</div>
+          <div class="scenario-subtitle">${subtitle}</div>
+        </div>
+      </div>
+      <div class="scenario-body">
+        <p class="scenario-desc">${esc(sc.description)}</p>
+        ${levelBoxes}
+        <table class="rr-table">
+          <thead>
+            <tr>
+              <th>NIVÅ</th><th>PRIS</th><th>RISK&nbsp;(PTS)</th><th>REWARD&nbsp;(PTS)</th><th>R:R</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // ── Chart ───────────────────────────────────────────────────────────────────
+  let currentChart = null;
+
+  function renderTradingChart(data) {
+    if (currentChart) { currentChart.destroy(); currentChart = null; }
+
+    const s   = data.short_scenario;
+    const l   = data.long_scenario;
+    const cur = data.current_price;
+
+    const prices = [
+      s.entry_low, s.entry_high, s.stop_loss, s.t1, s.t2, s.t3,
+      l.entry_low, l.entry_high, l.stop_loss, l.t1, l.t2, cur
+    ].filter(p => p != null && !isNaN(p));
+
+    const range = Math.max(...prices) - Math.min(...prices);
+    const pad   = range * 0.06 || 5;
+
+    const ctx = document.getElementById('tradingChart').getContext('2d');
+    currentChart = new Chart(ctx, {
+      type: 'scatter',
+      data: { datasets: [{ data: [{ x: 0.5, y: cur }], pointRadius: 0, showLine: false }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { display: false, min: 0, max: 1 },
+          y: {
+            min: Math.min(...prices) - pad,
+            max: Math.max(...prices) + pad,
+            grid:  { color: 'rgba(255,255,255,0.05)' },
+            ticks: { color: '#3a5060', font: { size: 11 } }
+          }
+        },
+        plugins: {
+          legend:     { display: false },
+          tooltip:    { enabled: false },
+          annotation: { annotations: buildAnnotations(s, l, cur) }
+        }
+      }
+    });
+  }
+
+  function buildAnnotations(s, l, cur) {
+    const ann = {};
+
+    // Zones (drawn first)
+    ann.shortEntry = zone(s.entry_low, s.entry_high,
+      'rgba(229,57,53,0.22)', 'rgba(229,57,53,0.5)');
+    ann.longEntry = zone(l.entry_low, l.entry_high,
+      'rgba(67,160,71,0.18)', 'rgba(67,160,71,0.45)');
+
+    // Price lines
+    ann.shortSL  = hline(s.stop_loss, '#e53935', [6, 4], 'SL ' + fmt(s.stop_loss));
+    ann.entryMid = hline((s.entry_low + s.entry_high) / 2, '#f5a623', [4, 4],
+      'ENTRY ' + fmt(s.entry_low) + '–' + fmt(s.entry_high));
+    ['t1', 't2', 't3'].forEach((t, i) => {
+      if (s[t] == null) return;
+      ann['sT' + (i + 1)] = hline(s[t], '#43a047', [8, 4], 'T' + (i + 1) + ' ' + fmt(s[t]));
+    });
+    ann.curPrice = hline(cur, '#6688aa', [], 'Nuv. ' + fmt(cur));
+
+    // Zone labels last — renders on top of all lines
+    ann.shortTag = tag((s.entry_low + s.entry_high) / 2, '#e53935', 'SHORT');
+    ann.longTag  = tag((l.entry_low + l.entry_high) / 2, '#43a047', 'LONG');
+
+    return ann;
+  }
+
+  function zone(yMin, yMax, bg, border) {
+    return {
+      type: 'box', yMin, yMax, xMin: 0, xMax: 1,
+      backgroundColor: bg, borderColor: border, borderWidth: 1,
+      label: { display: false }
+    };
+  }
+
+  function tag(y, color, text) {
+    return {
+      type: 'label',
+      yValue: y,
+      xValue: 0,
+      position: { x: 'start', y: 'center' },
+      backgroundColor: '#181c2a',
+      borderColor: color, borderWidth: 1, borderRadius: 4,
+      color: color,
+      content: text,
+      font: { size: 10, weight: '600' },
+      padding: { x: 6, y: 3 }
+    };
+  }
+
+  function hline(y, color, dash, label) {
+    return {
+      type: 'line', yMin: y, yMax: y,
+      borderColor: color, borderWidth: 1.5, borderDash: dash,
+      label: {
+        display: true, content: label, position: 'end',
+        backgroundColor: '#181c2a',
+        borderColor: color,
+        borderWidth: 1,
+        borderRadius: 4,
+        color: color,
+        font: { size: 10, weight: '600' },
+        padding: { x: 6, y: 3 },
+        yAdjust: 0
+      }
+    };
+  }
+  </script>
+</body>
+</html>

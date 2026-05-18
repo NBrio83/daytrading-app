@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daytrading — Logga in</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px;">
+
+    <div class="logo-text" style="margin-bottom:48px;">Daytrading</div>
+
+    <div class="upload-card" style="max-width:360px; width:100%;">
+      <h2 style="margin-bottom:20px;">Logga in</h2>
+      <form method="POST" action="/login">
+        <div style="margin-bottom:12px;">
+          <input
+            type="text"
+            name="username"
+            placeholder="Användarnamn"
+            autofocus
+            autocomplete="username"
+            required
+            style="
+              width:100%;
+              background: rgba(0,180,255,0.07);
+              border: 1px solid rgba(0,180,255,0.2);
+              border-radius: 6px;
+              padding: 12px 16px;
+              color: #fff;
+              font-size: 16px;
+              outline: none;
+            "
+          >
+        </div>
+        <div style="margin-bottom:16px;">
+          <input
+            type="password"
+            name="password"
+            placeholder="Lösenord"
+            autocomplete="current-password"
+            required
+            style="
+              width:100%;
+              background: rgba(0,180,255,0.07);
+              border: 1px solid rgba(0,180,255,0.2);
+              border-radius: 6px;
+              padding: 12px 16px;
+              color: #fff;
+              font-size: 16px;
+              outline: none;
+            "
+          >
+        </div>
+        {% if error %}
+        <div style="
+          margin-bottom:14px;
+          padding:10px 14px;
+          background:rgba(200,30,30,0.18);
+          border:1px solid rgba(220,60,60,0.35);
+          border-radius:6px;
+          color:#ff8080;
+          font-size:14px;
+        ">{{ error }}</div>
+        {% endif %}
+        <button type="submit" class="btn-analyze" style="width:100%; font-size:16px; padding:13px;">
+          Logga in
+        </button>
+      </form>
+    </div>
+
+  </div>
+</body>
+</html>
