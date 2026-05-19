@@ -16,9 +16,36 @@ app.secret_key = os.environ.get("SECRET_KEY", os.urandom(32))
 ALLOWED_TYPES    = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 ANALYSES_FILE    = os.path.join(os.path.dirname(__file__), ".tmp", "saved_analyses.json")
 MAX_SAVED        = 3
+DATABASE_URL     = os.environ.get("DATABASE_URL", "").replace("postgres://", "postgresql://")
+
+
+def init_db():
+    if not DATABASE_URL:
+        return
+    import psycopg2
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS analyses (
+                    id SERIAL PRIMARY KEY,
+                    data JSONB NOT NULL,
+                    saved_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+
+init_db()
 
 
 def load_analyses():
+    if DATABASE_URL:
+        try:
+            import psycopg2, psycopg2.extras
+            with psycopg2.connect(DATABASE_URL) as conn:
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                    cur.execute("SELECT data FROM analyses ORDER BY saved_at DESC LIMIT 3")
+                    return [row["data"] for row in cur.fetchall()]
+        except Exception:
+            return []
     try:
         with open(ANALYSES_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -26,10 +53,23 @@ def load_analyses():
         return []
 
 
-def save_analyses(analyses):
-    os.makedirs(os.path.dirname(ANALYSES_FILE), exist_ok=True)
-    with open(ANALYSES_FILE, "w", encoding="utf-8") as f:
-        json.dump(analyses, f, ensure_ascii=False)
+def save_analysis(entry):
+    if DATABASE_URL:
+        import psycopg2
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                cur.execute("INSERT INTO analyses (data) VALUES (%s)", (json.dumps(entry),))
+                cur.execute("""
+                    DELETE FROM analyses WHERE id NOT IN (
+                        SELECT id FROM analyses ORDER BY saved_at DESC LIMIT %s
+                    )
+                """, (MAX_SAVED,))
+    else:
+        analyses = load_analyses()
+        analyses.insert(0, entry)
+        os.makedirs(os.path.dirname(ANALYSES_FILE), exist_ok=True)
+        with open(ANALYSES_FILE, "w", encoding="utf-8") as f:
+            json.dump(analyses[:MAX_SAVED], f, ensure_ascii=False)
 
 
 def login_required(f):
@@ -89,10 +129,7 @@ def get_analyses():
 @login_required
 def post_analysis():
     body = request.get_json(silent=True) or {}
-    analyses = load_analyses()
-    analyses.insert(0, body)
-    analyses = analyses[:MAX_SAVED]
-    save_analyses(analyses)
+    save_analysis(body)
     return jsonify({"ok": True})
 
 
