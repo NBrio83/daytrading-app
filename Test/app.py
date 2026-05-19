@@ -2,6 +2,9 @@ import os
 import hmac
 import json
 import base64
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from functools import wraps
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from dotenv import load_dotenv
@@ -163,6 +166,86 @@ def analyze():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+def _fmt(n):
+    if n is None:
+        return "—"
+    num = float(n)
+    s = f"{num:,.2f}" if num % 1 != 0 else f"{num:,.0f}"
+    return s.replace(",", " ")
+
+
+def _scenario_html(sc, label, color):
+    entry_mid = (sc.get("entry_low", 0) + sc.get("entry_high", 0)) / 2
+    targets = [(k, sc[k], sc.get(f"rr_{k}", "")) for k in ("t1", "t2", "t3") if sc.get(k) is not None]
+    rows = "".join(
+        f"<tr><td>T{k[1].upper()}</td><td>{_fmt(p)}</td><td style='color:{color}'>{rr}</td></tr>"
+        for k, p, rr in targets
+    )
+    return f"""
+    <table width="100%" cellpadding="6" style="border-collapse:collapse;margin-bottom:16px">
+      <tr><td colspan="3" style="background:{color};color:#fff;font-weight:700;padding:8px 10px;border-radius:4px 4px 0 0">
+        {label}
+      </td></tr>
+      <tr style="background:#1e2433"><td>Entry</td><td>{_fmt(sc.get("entry_low"))} – {_fmt(sc.get("entry_high"))}</td><td></td></tr>
+      <tr style="background:#181c2a"><td>Stop Loss</td><td style="color:#e53935">{_fmt(sc.get("stop_loss"))}</td><td></td></tr>
+      {rows}
+      <tr style="background:#1e2433"><td colspan="3" style="font-size:13px;color:#aab">{sc.get("description","")}</td></tr>
+    </table>"""
+
+
+def _build_email_html(data):
+    short_html = _scenario_html(data.get("short_scenario", {}), "SHORT – Primär trade", "#e53935")
+    long_html  = _scenario_html(data.get("long_scenario",  {}), "LONG – Sekundär / reversal", "#43a047")
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head>
+<body style="background:#0d1117;color:#c9d1d9;font-family:Arial,sans-serif;padding:24px;max-width:600px">
+  <h1 style="color:#58a6ff;font-size:20px;margin-bottom:4px">{data.get("chart_title","Analys")}</h1>
+  <p style="color:#8b949e;margin-top:0">{data.get("instrument_info","")}</p>
+  <p><strong style="color:#aab">Nuvarande pris:</strong> {_fmt(data.get("current_price"))}</p>
+  <div style="background:#1e2433;border-left:3px solid #58a6ff;padding:10px 14px;margin-bottom:20px;border-radius:0 4px 4px 0">
+    <strong>Marknadsläge:</strong> {data.get("market_overview","")}
+  </div>
+  {short_html}
+  {long_html}
+  <div style="background:#1e2433;padding:12px 14px;border-radius:4px;margin-top:8px">
+    <strong>Sammanfattning:</strong><br>{data.get("summary","")}
+  </div>
+  <p style="color:#444;font-size:11px;margin-top:24px">Skickad från Daytrading-appen</p>
+</body></html>"""
+
+
+@app.route("/send-email", methods=["POST"])
+@login_required
+def send_email():
+    gmail_user  = os.environ.get("GMAIL_USER", "").strip()
+    gmail_pass  = os.environ.get("GMAIL_APP_PASSWORD", "").strip()
+    recipient   = os.environ.get("EMAIL_RECIPIENT", "").strip()
+
+    if not gmail_user or not gmail_pass or not recipient:
+        return jsonify({"error": "Gmail ej konfigurerad i .env (GMAIL_USER, GMAIL_APP_PASSWORD, EMAIL_RECIPIENT)"}), 500
+
+    data    = request.get_json(silent=True) or {}
+    subject = f"Analys: {data.get('chart_title', 'Daytrading')}"
+    html    = _build_email_html(data)
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"]    = gmail_user
+    msg["To"]      = recipient
+    msg.attach(MIMEText(html, "html", "utf-8"))
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(gmail_user, gmail_pass)
+            server.sendmail(gmail_user, recipient, msg.as_string())
+    except smtplib.SMTPAuthenticationError:
+        return jsonify({"error": "Gmail-autentisering misslyckades. Kontrollera GMAIL_USER och GMAIL_APP_PASSWORD."}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({"ok": True})
 
 
 if __name__ == "__main__":

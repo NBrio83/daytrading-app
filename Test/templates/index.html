@@ -89,10 +89,43 @@
       <!-- Summary -->
       <div class="dark-card" id="summaryCard"></div>
 
+      <!-- Email -->
+      <div style="text-align:center;margin:24px 0">
+        <button id="emailBtn" class="btn-analyze" onclick="sendEmail()">Maila analys</button>
+        <div id="emailStatus" style="margin-top:10px;font-size:14px"></div>
+      </div>
+
     </div>
   </div>
 
   <script>
+  let _currentAnalysis = null;
+
+  async function sendEmail() {
+    if (!_currentAnalysis) return;
+    const btn    = document.getElementById('emailBtn');
+    const status = document.getElementById('emailStatus');
+    btn.disabled = true;
+    status.style.color = '#aab';
+    status.textContent = 'Skickar…';
+    try {
+      const resp = await fetch('/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(_currentAnalysis)
+      });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.error || 'Okänt fel');
+      status.style.color = '#43a047';
+      status.textContent = 'Mail skickat!';
+    } catch (err) {
+      status.style.color = '#e53935';
+      status.textContent = 'Fel: ' + err.message;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
   // ── Sparade analyser ────────────────────────────────────────────────────────
   let _cachedAnalyses = [];
 
@@ -212,6 +245,8 @@
 
   // ── Main render ─────────────────────────────────────────────────────────────
   function renderResults(data) {
+    _currentAnalysis = data;
+    document.getElementById('emailStatus').textContent = '';
     document.getElementById('chartTitle').textContent    = data.chart_title     || '';
     document.getElementById('instrumentInfo').textContent = data.instrument_info || '';
     document.getElementById('currentPrice').textContent  = fmt(data.current_price);
