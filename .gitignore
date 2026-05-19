@@ -1,0 +1,11 @@
+# Ignorera allt i hemkatalogen
+*
+.*
+
+# Förutom Test-projektet
+!Test/
+!Test/**
+
+# Förutom README
+!README.md
+!.gitignore
