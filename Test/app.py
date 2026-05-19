@@ -1,5 +1,6 @@
 import os
 import hmac
+import json
 import base64
 from functools import wraps
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
@@ -12,7 +13,23 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # 20 MB
 app.secret_key = os.environ.get("SECRET_KEY", os.urandom(32))
 
-ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+ALLOWED_TYPES    = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+ANALYSES_FILE    = os.path.join(os.path.dirname(__file__), ".tmp", "saved_analyses.json")
+MAX_SAVED        = 3
+
+
+def load_analyses():
+    try:
+        with open(ANALYSES_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def save_analyses(analyses):
+    os.makedirs(os.path.dirname(ANALYSES_FILE), exist_ok=True)
+    with open(ANALYSES_FILE, "w", encoding="utf-8") as f:
+        json.dump(analyses, f, ensure_ascii=False)
 
 
 def login_required(f):
@@ -60,6 +77,23 @@ def logout():
 @login_required
 def index():
     return render_template("index.html")
+
+
+@app.route("/analyses", methods=["GET"])
+@login_required
+def get_analyses():
+    return jsonify(load_analyses())
+
+
+@app.route("/analyses", methods=["POST"])
+@login_required
+def post_analysis():
+    body = request.get_json(silent=True) or {}
+    analyses = load_analyses()
+    analyses.insert(0, body)
+    analyses = analyses[:MAX_SAVED]
+    save_analyses(analyses)
+    return jsonify({"ok": True})
 
 
 @app.route("/analyze", methods=["POST"])

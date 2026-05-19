@@ -16,6 +16,16 @@
       <div class="logo-text">Daytrading</div>
     </header>
 
+    <!-- Sparade analyser -->
+    <div class="saved-card">
+      <h2>Sparade analyser</h2>
+      <div class="saved-slots">
+        <div id="slot-0" class="saved-slot"></div>
+        <div id="slot-1" class="saved-slot"></div>
+        <div id="slot-2" class="saved-slot"></div>
+      </div>
+    </div>
+
     <!-- Upload form -->
     <div class="upload-card">
       <h2>Ladda upp diagram</h2>
@@ -83,6 +93,66 @@
   </div>
 
   <script>
+  // ── Sparade analyser ────────────────────────────────────────────────────────
+  let _cachedAnalyses = [];
+
+  async function fetchAndRenderSlots() {
+    try {
+      const resp = await fetch('/analyses');
+      _cachedAnalyses = await resp.json();
+    } catch {
+      _cachedAnalyses = [];
+    }
+    renderSavedSlots(_cachedAnalyses);
+  }
+
+  async function saveAnalysis(data) {
+    const entry = {
+      data,
+      title:      data.chart_title     || 'Okänt instrument',
+      instrument: data.instrument_info || '',
+      savedAt:    new Date().toISOString()
+    };
+    try { await fetch('/analyses', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(entry) }); }
+    catch {}
+    await fetchAndRenderSlots();
+  }
+
+  function renderSavedSlots(analyses) {
+    for (let i = 0; i < 3; i++) {
+      const slot  = document.getElementById('slot-' + i);
+      const entry = analyses[i];
+      if (entry) {
+        const d       = new Date(entry.savedAt);
+        const dateStr = d.toLocaleDateString('sv-SE');
+        const timeStr = d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+        slot.innerHTML = `
+          <button class="btn-saved" onclick="loadSavedAnalysis(${i})">Analys ${i + 1}</button>
+          <div class="saved-meta">
+            <span class="saved-title">${esc(entry.title)}</span>
+            <span class="saved-time">${dateStr} &bull; ${timeStr}</span>
+          </div>`;
+      } else {
+        slot.innerHTML = `
+          <button class="btn-saved btn-saved-empty" disabled>Tom slot</button>
+          <div class="saved-meta">
+            <span class="saved-time">Ingen sparad analys</span>
+          </div>`;
+      }
+    }
+  }
+
+  function loadSavedAnalysis(index) {
+    const entry = _cachedAnalyses[index];
+    if (!entry) return;
+    renderResults(entry.data);
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Initiera slots vid sidladdning
+  document.addEventListener('DOMContentLoaded', fetchAndRenderSlots);
+
   // ── Image previews ──────────────────────────────────────────────────────────
   document.getElementById('imageInput').addEventListener('change', function () {
     const area = document.getElementById('previewArea');
@@ -109,6 +179,7 @@
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Okänt fel');
       renderResults(data);
+      saveAnalysis(data);
       document.getElementById('resultsSection').style.display = 'block';
     } catch (err) {
       const el = document.getElementById('errorState');

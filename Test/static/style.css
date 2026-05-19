@@ -394,6 +394,84 @@ body {
   margin-bottom: 12px;
 }
 
+/* ── Sparade analyser ── */
+.saved-card {
+  background: rgba(0, 8, 18, 0.78);
+  border: 1px solid rgba(0, 180, 255, 0.22);
+  border-radius: 12px;
+  padding: 28px 36px;
+  backdrop-filter: blur(10px);
+  margin-bottom: 28px;
+}
+
+.saved-card h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #60dcff;
+  margin-bottom: 18px;
+}
+
+.saved-slots {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.saved-slot {
+  flex: 1;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.btn-saved {
+  width: 100%;
+  background: rgba(0, 180, 255, 0.10);
+  color: #60dcff;
+  border: 1px solid rgba(0, 180, 255, 0.28);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+}
+
+.btn-saved:hover:not(:disabled) {
+  background: rgba(0, 180, 255, 0.22);
+  border-color: rgba(0, 180, 255, 0.55);
+}
+
+.btn-saved-empty {
+  color: #2a4050;
+  border-color: rgba(0, 180, 255, 0.08);
+  cursor: not-allowed;
+}
+
+.saved-meta {
+  text-align: center;
+}
+
+.saved-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #b0ccd8;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-time {
+  display: block;
+  font-size: 11px;
+  color: #3a5060;
+}
+
 /* ── Mobile ── */
 @media (max-width: 500px) {
   .logo-text      { font-size: 52px; letter-spacing: 6px; }
