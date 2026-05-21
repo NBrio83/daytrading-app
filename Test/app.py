@@ -35,44 +35,64 @@ def init_db():
                     saved_at TIMESTAMPTZ DEFAULT NOW()
                 )
             """)
+            cur.execute("""
+                ALTER TABLE analyses ADD COLUMN IF NOT EXISTS panel VARCHAR(1) DEFAULT 'a'
+            """)
 
 init_db()
 
 
-def load_analyses():
+def load_analyses(panel):
     if DATABASE_URL:
         try:
             import psycopg2, psycopg2.extras
             with psycopg2.connect(DATABASE_URL) as conn:
                 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                    cur.execute("SELECT data FROM analyses ORDER BY saved_at DESC LIMIT 3")
+                    cur.execute(
+                        "SELECT data FROM analyses WHERE panel = %s ORDER BY saved_at DESC LIMIT 3",
+                        (panel,)
+                    )
                     return [row["data"] for row in cur.fetchall()]
         except Exception:
             return []
     try:
         with open(ANALYSES_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            stored = json.load(f)
+        if isinstance(stored, list):
+            return stored if panel == "a" else []
+        return stored.get(panel, [])
     except (FileNotFoundError, json.JSONDecodeError):
         return []
 
 
-def save_analysis(entry):
+def save_analysis(entry, panel):
     if DATABASE_URL:
         import psycopg2
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor() as cur:
-                cur.execute("INSERT INTO analyses (data) VALUES (%s)", (json.dumps(entry),))
+                cur.execute(
+                    "INSERT INTO analyses (data, panel) VALUES (%s, %s)",
+                    (json.dumps(entry), panel)
+                )
                 cur.execute("""
-                    DELETE FROM analyses WHERE id NOT IN (
-                        SELECT id FROM analyses ORDER BY saved_at DESC LIMIT %s
+                    DELETE FROM analyses WHERE panel = %s AND id NOT IN (
+                        SELECT id FROM analyses WHERE panel = %s ORDER BY saved_at DESC LIMIT %s
                     )
-                """, (MAX_SAVED,))
+                """, (panel, panel, MAX_SAVED))
     else:
-        analyses = load_analyses()
-        analyses.insert(0, entry)
+        try:
+            with open(ANALYSES_FILE, "r", encoding="utf-8") as f:
+                stored = json.load(f)
+            if isinstance(stored, list):
+                stored = {"a": stored, "b": []}
+        except (FileNotFoundError, json.JSONDecodeError):
+            stored = {"a": [], "b": []}
+        panel_list = stored.get(panel, [])
+        panel_list.insert(0, entry)
+        stored[panel] = panel_list[:MAX_SAVED]
         os.makedirs(os.path.dirname(ANALYSES_FILE), exist_ok=True)
         with open(ANALYSES_FILE, "w", encoding="utf-8") as f:
-            json.dump(analyses[:MAX_SAVED], f, ensure_ascii=False)
+            json.dump(stored, f, ensure_ascii=False)
 
 
 def login_required(f):
@@ -125,14 +145,16 @@ def index():
 @app.route("/analyses", methods=["GET"])
 @login_required
 def get_analyses():
-    return jsonify(load_analyses())
+    panel = request.args.get("panel", "a")
+    return jsonify(load_analyses(panel))
 
 
 @app.route("/analyses", methods=["POST"])
 @login_required
 def post_analysis():
-    body = request.get_json(silent=True) or {}
-    save_analysis(body)
+    body  = request.get_json(silent=True) or {}
+    panel = body.pop("panel", "a")
+    save_analysis(body, panel)
     return jsonify({"ok": True})
 
 
@@ -161,8 +183,10 @@ def analyze():
     if not os.environ.get("ANTHROPIC_API_KEY"):
         return jsonify({"error": "ANTHROPIC_API_KEY saknas i .env-filen"}), 500
 
+    panel = request.form.get("panel", "a")
+
     try:
-        result = analyze_chart_image(image_data_list)
+        result = analyze_chart_image(image_data_list, panel)
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

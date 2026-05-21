@@ -16,95 +16,166 @@
       <div class="logo-text">Daytrading</div>
     </header>
 
-    <!-- Sparade analyser -->
-    <div class="saved-card">
-      <h2>Sparade analyser</h2>
-      <div class="saved-slots">
-        <div id="slot-0" class="saved-slot"></div>
-        <div id="slot-1" class="saved-slot"></div>
-        <div id="slot-2" class="saved-slot"></div>
-      </div>
-    </div>
+    <!-- Tvåkolumns-grid -->
+    <div class="panels-grid">
 
-    <!-- Upload form -->
-    <div class="upload-card">
-      <h2>Ladda upp diagram</h2>
-      <p>Ladda upp en eller flera skärmdumpar av handeldiagram. AI:n analyserar och identifierar entry-zoner, stop loss och targets på svenska.</p>
-      <form id="uploadForm" enctype="multipart/form-data">
-        <div class="file-row">
-          <input type="file" id="imageInput" name="images"
-                 accept="image/jpeg,image/png,image/webp"
-                 multiple required>
-          <button type="submit" class="btn-analyze">Analysera diagram</button>
+      <!-- ══════ PANEL 1 ══════ -->
+      <div class="panel-col">
+        <div class="panel-label">Guld</div>
+
+        <div class="saved-card">
+          <h2>Sparade analyser</h2>
+          <div class="saved-slots" id="savedSlots-a"></div>
         </div>
-        <div id="previewArea"></div>
-      </form>
-      <div id="loadingState" style="display:none">
-        <div class="spinner"></div>
-        <span>Analyserar diagram med Claude AI&hellip;</span>
-      </div>
-      <div id="errorState" class="error-message" style="display:none"></div>
-    </div>
 
-    <!-- Results -->
-    <div id="resultsSection" style="display:none">
-
-      <!-- Title + current price -->
-      <div class="result-header">
-        <div class="result-title-group">
-          <h1 id="chartTitle" class="chart-title"></h1>
-          <p id="instrumentInfo" class="instrument-info"></p>
+        <div class="upload-card">
+          <h2>Ladda upp diagram — Guld</h2>
+          <p>
+            Använda följande inställning<br>
+            RSI:<br>
+            &nbsp;&nbsp;- RSI Length 14<br>
+            &nbsp;&nbsp;- Source Close<br>
+            &nbsp;&nbsp;- Smoothing EMA<br>
+            &nbsp;&nbsp;- Smoothing Length 14<br>
+            &nbsp;&nbsp;- Calculate Divergence På<br>
+            &nbsp;&nbsp;- Wait for timeframe closes På<br>
+            Volym<br>
+            EMA 9/20/50/200<br>
+            <br>
+            Ladda upp bild på DXY och DFII10 ihop med guld bilderna
+          </p>
+          <form id="form-a" enctype="multipart/form-data">
+            <div class="file-row">
+              <input type="file" id="input-a" name="images" class="image-input"
+                     accept="image/jpeg,image/png,image/webp" multiple required>
+              <button type="submit" class="btn-analyze">Analysera diagram</button>
+            </div>
+            <div id="preview-a" class="preview-area"></div>
+          </form>
+          <div id="loading-a" class="loading-state" style="display:none">
+            <div class="spinner"></div>
+            <span>Analyserar diagram med Claude AI&hellip;</span>
+          </div>
+          <div id="error-a" class="error-message" style="display:none"></div>
         </div>
-        <div class="price-box">
-          <span id="currentPrice" class="current-price-value"></span>
-          <span class="current-price-label">Nuv. pris</span>
+
+        <div id="results-a" style="display:none">
+          <div class="result-header">
+            <div class="result-title-group">
+              <h1 id="title-a" class="chart-title"></h1>
+              <p id="info-a" class="instrument-info"></p>
+            </div>
+            <div class="price-box">
+              <span id="price-a" class="current-price-value"></span>
+              <span class="current-price-label">Nuv. pris</span>
+            </div>
+          </div>
+          <div class="dark-card"><p id="overview-a"></p></div>
+          <div class="dark-card chart-card">
+            <div class="chart-section-title">PRISNIVÅER &mdash; SHORT &amp; LONG SCENARION</div>
+            <div class="chart-wrap"><canvas id="chart-a"></canvas></div>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-line sl"></span> Stop loss</span>
+              <span class="legend-item"><span class="legend-line entry"></span> Entry-zon</span>
+              <span class="legend-item"><span class="legend-line target"></span> Target</span>
+              <span class="legend-item"><span class="legend-line cur"></span> Nuv. pris</span>
+            </div>
+          </div>
+          <div class="scenario-card" id="short-a"></div>
+          <div class="scenario-card" id="long-a"></div>
+          <div class="dark-card" id="summary-a"></div>
+          <div style="text-align:center;margin:24px 0">
+            <button id="emailBtn-a" class="btn-analyze" onclick="sendEmail('a')">Maila analys</button>
+            <div id="emailStatus-a" style="margin-top:10px;font-size:14px"></div>
+          </div>
         </div>
       </div>
 
-      <!-- Market overview -->
-      <div class="dark-card">
-        <p id="marketOverview"></p>
-      </div>
+      <!-- ══════ PANEL 2 ══════ -->
+      <div class="panel-col">
+        <div class="panel-label">Nasdaq</div>
 
-      <!-- Chart -->
-      <div class="dark-card chart-card">
-        <div class="chart-section-title">PRISNIVÅER &mdash; SHORT &amp; LONG SCENARION</div>
-        <div class="chart-wrap">
-          <canvas id="tradingChart"></canvas>
+        <div class="saved-card">
+          <h2>Sparade analyser</h2>
+          <div class="saved-slots" id="savedSlots-b"></div>
         </div>
-        <div class="chart-legend">
-          <span class="legend-item"><span class="legend-line sl"></span> Stop loss</span>
-          <span class="legend-item"><span class="legend-line entry"></span> Entry-zon</span>
-          <span class="legend-item"><span class="legend-line target"></span> Target</span>
-          <span class="legend-item"><span class="legend-line cur"></span> Nuv. pris</span>
+
+        <div class="upload-card">
+          <h2>Ladda upp diagram — Nasdaq</h2>
+          <p>
+            Använda följande inställning<br>
+            Volym<br>
+            VWAP Volume-Weighted Average<br>
+            EMA 9/20/50/200<br>
+            ATR 14 Average True Range<br>
+            Gårdagens High / Low<br>
+            (inte RSI eller MACD)
+          </p>
+          <form id="form-b" enctype="multipart/form-data">
+            <div class="file-row">
+              <input type="file" id="input-b" name="images" class="image-input"
+                     accept="image/jpeg,image/png,image/webp" multiple required>
+              <button type="submit" class="btn-analyze">Analysera diagram</button>
+            </div>
+            <div id="preview-b" class="preview-area"></div>
+          </form>
+          <div id="loading-b" class="loading-state" style="display:none">
+            <div class="spinner"></div>
+            <span>Analyserar diagram med Claude AI&hellip;</span>
+          </div>
+          <div id="error-b" class="error-message" style="display:none"></div>
+        </div>
+
+        <div id="results-b" style="display:none">
+          <div class="result-header">
+            <div class="result-title-group">
+              <h1 id="title-b" class="chart-title"></h1>
+              <p id="info-b" class="instrument-info"></p>
+            </div>
+            <div class="price-box">
+              <span id="price-b" class="current-price-value"></span>
+              <span class="current-price-label">Nuv. pris</span>
+            </div>
+          </div>
+          <div class="dark-card"><p id="overview-b"></p></div>
+          <div class="dark-card chart-card">
+            <div class="chart-section-title">PRISNIVÅER &mdash; SHORT &amp; LONG SCENARION</div>
+            <div class="chart-wrap"><canvas id="chart-b"></canvas></div>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-line sl"></span> Stop loss</span>
+              <span class="legend-item"><span class="legend-line entry"></span> Entry-zon</span>
+              <span class="legend-item"><span class="legend-line target"></span> Target</span>
+              <span class="legend-item"><span class="legend-line cur"></span> Nuv. pris</span>
+            </div>
+          </div>
+          <div class="scenario-card" id="short-b"></div>
+          <div class="scenario-card" id="long-b"></div>
+          <div class="dark-card" id="summary-b"></div>
+          <div style="text-align:center;margin:24px 0">
+            <button id="emailBtn-b" class="btn-analyze" onclick="sendEmail('b')">Maila analys</button>
+            <div id="emailStatus-b" style="margin-top:10px;font-size:14px"></div>
+          </div>
         </div>
       </div>
 
-      <!-- SHORT scenario -->
-      <div class="scenario-card" id="shortCard"></div>
-
-      <!-- LONG scenario -->
-      <div class="scenario-card" id="longCard"></div>
-
-      <!-- Summary -->
-      <div class="dark-card" id="summaryCard"></div>
-
-      <!-- Email -->
-      <div style="text-align:center;margin:24px 0">
-        <button id="emailBtn" class="btn-analyze" onclick="sendEmail()">Maila analys</button>
-        <div id="emailStatus" style="margin-top:10px;font-size:14px"></div>
-      </div>
-
-    </div>
+    </div><!-- /panels-grid -->
   </div>
 
   <script>
-  let _currentAnalysis = null;
+  // ── Per-panel state ──────────────────────────────────────────────────────────
+  const _panels = {
+    a: { analysis: null, chart: null },
+    b: { analysis: null, chart: null }
+  };
 
-  async function sendEmail() {
-    if (!_currentAnalysis) return;
-    const btn    = document.getElementById('emailBtn');
-    const status = document.getElementById('emailStatus');
+  function g(name, panel) { return document.getElementById(name + '-' + panel); }
+
+  // ── Email ────────────────────────────────────────────────────────────────────
+  async function sendEmail(panel) {
+    const analysis = _panels[panel].analysis;
+    if (!analysis) return;
+    const btn    = g('emailBtn', panel);
+    const status = g('emailStatus', panel);
     btn.disabled = true;
     status.style.color = '#aab';
     status.textContent = 'Skickar…';
@@ -112,7 +183,7 @@
       const resp = await fetch('/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(_currentAnalysis)
+        body: JSON.stringify(analysis)
       });
       const json = await resp.json();
       if (!resp.ok) throw new Error(json.error || 'Okänt fel');
@@ -126,41 +197,55 @@
     }
   }
 
-  // ── Sparade analyser ────────────────────────────────────────────────────────
-  let _cachedAnalyses = [];
+  // ── Sparade analyser ─────────────────────────────────────────────────────────
+  const _cachedAnalyses = { a: [], b: [] };
 
   async function fetchAndRenderSlots() {
-    try {
-      const resp = await fetch('/analyses');
-      _cachedAnalyses = await resp.json();
-    } catch {
-      _cachedAnalyses = [];
+    for (const panel of ['a', 'b']) {
+      try {
+        const resp = await fetch('/analyses?panel=' + panel);
+        _cachedAnalyses[panel] = await resp.json();
+      } catch {
+        _cachedAnalyses[panel] = [];
+      }
+      renderSavedSlots(_cachedAnalyses[panel], panel);
     }
-    renderSavedSlots(_cachedAnalyses);
   }
 
-  async function saveAnalysis(data) {
+  async function saveAnalysis(data, panel) {
     const entry = {
+      panel,
       data,
       title:      data.chart_title     || 'Okänt instrument',
       instrument: data.instrument_info || '',
       savedAt:    new Date().toISOString()
     };
-    try { await fetch('/analyses', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(entry) }); }
-    catch {}
-    await fetchAndRenderSlots();
+    try {
+      await fetch('/analyses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      });
+    } catch {}
+    const resp = await fetch('/analyses?panel=' + panel);
+    _cachedAnalyses[panel] = await resp.json().catch(() => []);
+    renderSavedSlots(_cachedAnalyses[panel], panel);
   }
 
-  function renderSavedSlots(analyses) {
+  function renderSavedSlots(analyses, panel) {
+    const container = document.getElementById('savedSlots-' + panel);
+    if (!container) return;
+    container.innerHTML = '';
     for (let i = 0; i < 3; i++) {
-      const slot  = document.getElementById('slot-' + i);
       const entry = analyses[i];
+      const slot  = document.createElement('div');
+      slot.className = 'saved-slot';
       if (entry) {
         const d       = new Date(entry.savedAt);
         const dateStr = d.toLocaleDateString('sv-SE');
         const timeStr = d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
         slot.innerHTML = `
-          <button class="btn-saved" onclick="loadSavedAnalysis(${i})">Analys ${i + 1}</button>
+          <button class="btn-saved" onclick="loadSavedAnalysis(${i}, '${panel}')">Analys ${i + 1}</button>
           <div class="saved-meta">
             <span class="saved-title">${esc(entry.title)}</span>
             <span class="saved-time">${dateStr} &bull; ${timeStr}</span>
@@ -172,59 +257,63 @@
             <span class="saved-time">Ingen sparad analys</span>
           </div>`;
       }
+      container.appendChild(slot);
     }
   }
 
-  function loadSavedAnalysis(index) {
-    const entry = _cachedAnalyses[index];
+  function loadSavedAnalysis(index, panel) {
+    const entry = _cachedAnalyses[panel][index];
     if (!entry) return;
-    renderResults(entry.data);
-    document.getElementById('resultsSection').style.display = 'block';
-    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+    renderResults(entry.data, panel);
+    const section = g('results', panel);
+    section.style.display = 'block';
+    section.scrollIntoView({ behavior: 'smooth' });
   }
 
-  // Initiera slots vid sidladdning
   document.addEventListener('DOMContentLoaded', fetchAndRenderSlots);
 
-  // ── Image previews ──────────────────────────────────────────────────────────
-  document.getElementById('imageInput').addEventListener('change', function () {
-    const area = document.getElementById('previewArea');
-    area.innerHTML = '';
-    Array.from(this.files).forEach(file => {
-      const img = document.createElement('img');
-      img.src = URL.createObjectURL(file);
-      img.onload = () => URL.revokeObjectURL(img.src);
-      area.appendChild(img);
+  // ── Image previews + form submit ─────────────────────────────────────────────
+  ['a', 'b'].forEach(panel => {
+    document.getElementById('input-' + panel).addEventListener('change', function () {
+      const area = document.getElementById('preview-' + panel);
+      area.innerHTML = '';
+      Array.from(this.files).forEach(file => {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.onload = () => URL.revokeObjectURL(img.src);
+        area.appendChild(img);
+      });
+    });
+
+    document.getElementById('form-' + panel).addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const btn = this.querySelector('.btn-analyze');
+      btn.disabled = true;
+      g('loading', panel).style.display = 'flex';
+      g('error',   panel).style.display = 'none';
+      g('results', panel).style.display = 'none';
+
+      try {
+        const formData = new FormData(this);
+      formData.append('panel', panel);
+      const resp = await fetch('/analyze', { method: 'POST', body: formData });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Okänt fel');
+        renderResults(data, panel);
+        saveAnalysis(data, panel);
+        g('results', panel).style.display = 'block';
+      } catch (err) {
+        const el = g('error', panel);
+        el.style.display = 'block';
+        el.textContent   = 'Fel: ' + err.message;
+      } finally {
+        g('loading', panel).style.display = 'none';
+        btn.disabled = false;
+      }
     });
   });
 
-  // ── Form submit ─────────────────────────────────────────────────────────────
-  document.getElementById('uploadForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const btn = this.querySelector('.btn-analyze');
-    btn.disabled = true;
-    document.getElementById('loadingState').style.display = 'flex';
-    document.getElementById('errorState').style.display = 'none';
-    document.getElementById('resultsSection').style.display = 'none';
-
-    try {
-      const resp = await fetch('/analyze', { method: 'POST', body: new FormData(this) });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Okänt fel');
-      renderResults(data);
-      saveAnalysis(data);
-      document.getElementById('resultsSection').style.display = 'block';
-    } catch (err) {
-      const el = document.getElementById('errorState');
-      el.style.display = 'block';
-      el.textContent = 'Fel: ' + err.message;
-    } finally {
-      document.getElementById('loadingState').style.display = 'none';
-      btn.disabled = false;
-    }
-  });
-
-  // ── Helpers ─────────────────────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────────────────
   function esc(str) {
     if (str == null) return '';
     return String(str)
@@ -233,9 +322,9 @@
 
   function fmt(n) {
     if (n == null) return '—';
-    const num = Number(n);
+    const num   = Number(n);
     const parts = num.toFixed(num % 1 === 0 ? 0 : 2).split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     return parts.join('.');
   }
 
@@ -243,34 +332,34 @@
     return parseFloat(rrStr) >= 2 ? 'rr-high' : 'rr-low';
   }
 
-  // ── Main render ─────────────────────────────────────────────────────────────
-  function renderResults(data) {
-    _currentAnalysis = data;
-    document.getElementById('emailStatus').textContent = '';
-    document.getElementById('chartTitle').textContent    = data.chart_title     || '';
-    document.getElementById('instrumentInfo').textContent = data.instrument_info || '';
-    document.getElementById('currentPrice').textContent  = fmt(data.current_price);
-    document.getElementById('marketOverview').innerHTML  =
-      '<strong>Marknadsläge:</strong> ' + esc(data.market_overview);
+  // ── Render ───────────────────────────────────────────────────────────────────
+  function renderResults(data, panel) {
+    _panels[panel].analysis = data;
+    g('emailStatus', panel).textContent = '';
+    g('title',    panel).textContent  = data.chart_title     || '';
+    g('info',     panel).textContent  = data.instrument_info || '';
+    g('price',    panel).textContent  = fmt(data.current_price);
+    let overviewHtml = '<strong>Marknadsläge:</strong> ' + esc(data.market_overview);
+    if (data.confidence)   overviewHtml += '<br><br><strong>Konfidensgrad:</strong> ' + esc(data.confidence);
+    if (data.invalidation) overviewHtml += '<br><strong>Ogiltigförklaras om:</strong> ' + esc(data.invalidation);
+    g('overview', panel).innerHTML = overviewHtml;
 
-    renderScenario(document.getElementById('shortCard'), data.short_scenario, 'short');
-    renderScenario(document.getElementById('longCard'),  data.long_scenario,  'long');
+    renderScenario(g('short', panel), data.short_scenario, 'short');
+    renderScenario(g('long',  panel), data.long_scenario,  'long');
 
-    document.getElementById('summaryCard').innerHTML =
+    g('summary', panel).innerHTML =
       '<h3 class="summary-heading">Sammanfattning</h3><p>' + esc(data.summary) + '</p>';
 
-    renderTradingChart(data);
+    renderTradingChart(data, panel);
   }
 
-  // ── Scenario card ───────────────────────────────────────────────────────────
+  // ── Scenario card ─────────────────────────────────────────────────────────────
   function renderScenario(el, sc, type) {
-    const isShort  = type === 'short';
-    const badge    = isShort ? 'SHORT' : 'LONG';
-    const subtitle = isShort ? 'Primär trade' : 'Sekundär / reversal';
+    const isShort      = type === 'short';
+    const badge        = isShort ? 'SHORT' : 'LONG';
+    const subtitle     = isShort ? 'Primär trade' : 'Sekundär / reversal';
     const displayLabel = (sc.label || '')
-      .replace(/\s*\(sälja\)/gi, '')
-      .replace(/\s*\(köpa\)/gi, '')
-      .trim();
+      .replace(/\s*\(sälja\)/gi, '').replace(/\s*\(köpa\)/gi, '').trim();
     const entryMid = (sc.entry_low + sc.entry_high) / 2;
     const riskPts  = Math.round(Math.abs(isShort ? sc.stop_loss - entryMid : entryMid - sc.stop_loss));
 
@@ -295,9 +384,7 @@
         <div class="level-box target-box">
           <div class="level-label">${t.label}</div>
           <div class="level-price target-price">${fmt(t.price)}</div>
-        </div>
-      `).join('')}
-    `;
+        </div>`).join('')}`;
 
     const tableRows = [
       `<tr><td>Entry</td><td>${fmt(entryMid)}</td><td>—</td><td>—</td><td>—</td></tr>`,
@@ -309,8 +396,7 @@
           <td>${riskPts}</td>
           <td>${t.rewardPts}</td>
           <td class="${rrColorClass(t.rr)}">${esc(t.rr)}</td>
-        </tr>
-      `)
+        </tr>`)
     ].join('');
 
     el.innerHTML = `
@@ -326,21 +412,16 @@
         ${levelBoxes}
         <table class="rr-table">
           <thead>
-            <tr>
-              <th>NIVÅ</th><th>PRIS</th><th>RISK&nbsp;(PTS)</th><th>REWARD&nbsp;(PTS)</th><th>R:R</th>
-            </tr>
+            <tr><th>NIVÅ</th><th>PRIS</th><th>RISK&nbsp;(PTS)</th><th>REWARD&nbsp;(PTS)</th><th>R:R</th></tr>
           </thead>
           <tbody>${tableRows}</tbody>
         </table>
-      </div>
-    `;
+      </div>`;
   }
 
-  // ── Chart ───────────────────────────────────────────────────────────────────
-  let currentChart = null;
-
-  function renderTradingChart(data) {
-    if (currentChart) { currentChart.destroy(); currentChart = null; }
+  // ── Chart ────────────────────────────────────────────────────────────────────
+  function renderTradingChart(data, panel) {
+    if (_panels[panel].chart) { _panels[panel].chart.destroy(); _panels[panel].chart = null; }
 
     const s   = data.short_scenario;
     const l   = data.long_scenario;
@@ -349,13 +430,13 @@
     const prices = [
       s.entry_low, s.entry_high, s.stop_loss, s.t1, s.t2, s.t3,
       l.entry_low, l.entry_high, l.stop_loss, l.t1, l.t2, cur
-    ].filter(p => p != null && !isNaN(p));
+    ].filter(v => v != null && !isNaN(v));
 
     const range = Math.max(...prices) - Math.min(...prices);
     const pad   = range * 0.06 || 5;
 
-    const ctx = document.getElementById('tradingChart').getContext('2d');
-    currentChart = new Chart(ctx, {
+    const ctx = document.getElementById('chart-' + panel).getContext('2d');
+    _panels[panel].chart = new Chart(ctx, {
       type: 'scatter',
       data: { datasets: [{ data: [{ x: 0.5, y: cur }], pointRadius: 0, showLine: false }] },
       options: {
@@ -381,27 +462,18 @@
 
   function buildAnnotations(s, l, cur) {
     const ann = {};
-
-    // Zones (drawn first)
-    ann.shortEntry = zone(s.entry_low, s.entry_high,
-      'rgba(229,57,53,0.22)', 'rgba(229,57,53,0.5)');
-    ann.longEntry = zone(l.entry_low, l.entry_high,
-      'rgba(67,160,71,0.18)', 'rgba(67,160,71,0.45)');
-
-    // Price lines
-    ann.shortSL  = hline(s.stop_loss, '#e53935', [6, 4], 'SL ' + fmt(s.stop_loss));
-    ann.entryMid = hline((s.entry_low + s.entry_high) / 2, '#f5a623', [4, 4],
-      'ENTRY ' + fmt(s.entry_low) + '–' + fmt(s.entry_high));
+    ann.shortEntry = zone(s.entry_low, s.entry_high, 'rgba(229,57,53,0.22)', 'rgba(229,57,53,0.5)');
+    ann.longEntry  = zone(l.entry_low, l.entry_high, 'rgba(67,160,71,0.18)', 'rgba(67,160,71,0.45)');
+    ann.shortSL    = hline(s.stop_loss, '#e53935', [6, 4], 'SL ' + fmt(s.stop_loss));
+    ann.entryMid   = hline((s.entry_low + s.entry_high) / 2, '#f5a623', [4, 4],
+                      'ENTRY ' + fmt(s.entry_low) + '–' + fmt(s.entry_high));
     ['t1', 't2', 't3'].forEach((t, i) => {
       if (s[t] == null) return;
       ann['sT' + (i + 1)] = hline(s[t], '#43a047', [8, 4], 'T' + (i + 1) + ' ' + fmt(s[t]));
     });
     ann.curPrice = hline(cur, '#6688aa', [], 'Nuv. ' + fmt(cur));
-
-    // Zone labels last — renders on top of all lines
     ann.shortTag = tag((s.entry_low + s.entry_high) / 2, '#e53935', 'SHORT');
     ann.longTag  = tag((l.entry_low + l.entry_high) / 2, '#43a047', 'LONG');
-
     return ann;
   }
 
@@ -415,14 +487,11 @@
 
   function tag(y, color, text) {
     return {
-      type: 'label',
-      yValue: y,
-      xValue: 0,
+      type: 'label', yValue: y, xValue: 0,
       position: { x: 'start', y: 'center' },
       backgroundColor: '#181c2a',
       borderColor: color, borderWidth: 1, borderRadius: 4,
-      color: color,
-      content: text,
+      color, content: text,
       font: { size: 10, weight: '600' },
       padding: { x: 6, y: 3 }
     };
@@ -435,13 +504,9 @@
       label: {
         display: true, content: label, position: 'end',
         backgroundColor: '#181c2a',
-        borderColor: color,
-        borderWidth: 1,
-        borderRadius: 4,
-        color: color,
-        font: { size: 10, weight: '600' },
-        padding: { x: 6, y: 3 },
-        yAdjust: 0
+        borderColor: color, borderWidth: 1, borderRadius: 4,
+        color, font: { size: 10, weight: '600' },
+        padding: { x: 6, y: 3 }, yAdjust: 0
       }
     };
   }
