@@ -183,12 +183,12 @@ def analyze_chart_image(image_data_list: list, panel: str = "a") -> dict:
     """
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
-    if panel == "b":
-        system = NASDAQ_SYSTEM_PROMPT
-        prompt = NASDAQ_ANALYSIS_PROMPT
-    elif panel == "a":
+    if panel == "a":
         system = GOLD_SYSTEM_PROMPT
         prompt = GOLD_ANALYSIS_PROMPT
+    elif panel == "b":
+        system = NASDAQ_SYSTEM_PROMPT
+        prompt = NASDAQ_ANALYSIS_PROMPT
     else:
         system = SYSTEM_PROMPT
         prompt = ANALYSIS_PROMPT
