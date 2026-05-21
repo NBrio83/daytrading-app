@@ -357,7 +357,8 @@
   function renderScenario(el, sc, type) {
     const isShort      = type === 'short';
     const badge        = isShort ? 'SHORT' : 'LONG';
-    const subtitle     = isShort ? 'Primär trade' : 'Sekundär / reversal';
+    const labelLower   = (sc.label || '').toLowerCase();
+    const subtitle     = labelLower.includes('favoriserat') ? 'Primär trade' : 'Sekundär / reversal';
     const displayLabel = (sc.label || '')
       .replace(/\s*\(sälja\)/gi, '').replace(/\s*\(köpa\)/gi, '').trim();
     const entryMid = (sc.entry_low + sc.entry_high) / 2;
