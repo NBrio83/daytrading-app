@@ -72,8 +72,8 @@
           </div>
           <div class="dark-card"><p id="overview-a"></p></div>
           <div class="dark-card chart-card">
-            <div class="chart-section-title">PRISNIVÅER &mdash; SHORT &amp; LONG SCENARION</div>
-            <div class="chart-wrap"><canvas id="chart-a"></canvas></div>
+            <div class="chart-section-title">PRISNIVÅER &mdash; SHORT SCENARIO</div>
+            <div class="chart-wrap"><canvas id="chart-a-short"></canvas></div>
             <div class="chart-legend">
               <span class="legend-item"><span class="legend-line sl"></span> Stop loss</span>
               <span class="legend-item"><span class="legend-line entry"></span> Entry-zon</span>
@@ -82,6 +82,16 @@
             </div>
           </div>
           <div class="scenario-card" id="short-a"></div>
+          <div class="dark-card chart-card">
+            <div class="chart-section-title">PRISNIVÅER &mdash; LONG SCENARIO</div>
+            <div class="chart-wrap"><canvas id="chart-a-long"></canvas></div>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-line sl"></span> Stop loss</span>
+              <span class="legend-item"><span class="legend-line entry"></span> Entry-zon</span>
+              <span class="legend-item"><span class="legend-line target"></span> Target</span>
+              <span class="legend-item"><span class="legend-line cur"></span> Nuv. pris</span>
+            </div>
+          </div>
           <div class="scenario-card" id="long-a"></div>
           <div class="dark-card" id="summary-a"></div>
           <div style="text-align:center;margin:24px 0">
@@ -139,8 +149,8 @@
           </div>
           <div class="dark-card"><p id="overview-b"></p></div>
           <div class="dark-card chart-card">
-            <div class="chart-section-title">PRISNIVÅER &mdash; SHORT &amp; LONG SCENARION</div>
-            <div class="chart-wrap"><canvas id="chart-b"></canvas></div>
+            <div class="chart-section-title">PRISNIVÅER &mdash; SHORT SCENARIO</div>
+            <div class="chart-wrap"><canvas id="chart-b-short"></canvas></div>
             <div class="chart-legend">
               <span class="legend-item"><span class="legend-line sl"></span> Stop loss</span>
               <span class="legend-item"><span class="legend-line entry"></span> Entry-zon</span>
@@ -149,6 +159,16 @@
             </div>
           </div>
           <div class="scenario-card" id="short-b"></div>
+          <div class="dark-card chart-card">
+            <div class="chart-section-title">PRISNIVÅER &mdash; LONG SCENARIO</div>
+            <div class="chart-wrap"><canvas id="chart-b-long"></canvas></div>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-line sl"></span> Stop loss</span>
+              <span class="legend-item"><span class="legend-line entry"></span> Entry-zon</span>
+              <span class="legend-item"><span class="legend-line target"></span> Target</span>
+              <span class="legend-item"><span class="legend-line cur"></span> Nuv. pris</span>
+            </div>
+          </div>
           <div class="scenario-card" id="long-b"></div>
           <div class="dark-card" id="summary-b"></div>
           <div style="text-align:center;margin:24px 0">
@@ -164,8 +184,8 @@
   <script>
   // ── Per-panel state ──────────────────────────────────────────────────────────
   const _panels = {
-    a: { analysis: null, chart: null },
-    b: { analysis: null, chart: null }
+    a: { analysis: null, chartShort: null, chartLong: null },
+    b: { analysis: null, chartShort: null, chartLong: null }
   };
 
   function g(name, panel) { return document.getElementById(name + '-' + panel); }
@@ -421,25 +441,12 @@
   }
 
   // ── Chart ────────────────────────────────────────────────────────────────────
-  function renderTradingChart(data, panel) {
-    if (_panels[panel].chart) { _panels[panel].chart.destroy(); _panels[panel].chart = null; }
-
-    const s   = data.short_scenario;
-    const l   = data.long_scenario;
-    const cur = data.current_price;
-
-    const prices = [
-      s.entry_low, s.entry_high, s.stop_loss, s.t1, s.t2, s.t3,
-      l.entry_low, l.entry_high, l.stop_loss, l.t1, l.t2, cur
-    ].filter(v => v != null && !isNaN(v));
-
+  function makeChartOptions(prices, annotations) {
     const range = Math.max(...prices) - Math.min(...prices);
     const pad   = range * 0.06 || 5;
-
-    const ctx = document.getElementById('chart-' + panel).getContext('2d');
-    _panels[panel].chart = new Chart(ctx, {
+    return {
       type: 'scatter',
-      data: { datasets: [{ data: [{ x: 0.5, y: cur }], pointRadius: 0, showLine: false }] },
+      data: { datasets: [{ data: [], pointRadius: 0, showLine: false }] },
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -455,16 +462,35 @@
         plugins: {
           legend:     { display: false },
           tooltip:    { enabled: false },
-          annotation: { annotations: buildAnnotations(s, l, cur) }
+          annotation: { annotations }
         }
       }
-    });
+    };
   }
 
-  function buildAnnotations(s, l, cur) {
+  function renderTradingChart(data, panel) {
+    if (_panels[panel].chartShort) { _panels[panel].chartShort.destroy(); _panels[panel].chartShort = null; }
+    if (_panels[panel].chartLong)  { _panels[panel].chartLong.destroy();  _panels[panel].chartLong  = null; }
+
+    const s   = data.short_scenario;
+    const l   = data.long_scenario;
+    const cur = data.current_price;
+
+    const shortPrices = [s.entry_low, s.entry_high, s.stop_loss, s.t1, s.t2, s.t3, cur]
+      .filter(v => v != null && !isNaN(v));
+    const longPrices  = [l.entry_low, l.entry_high, l.stop_loss, l.t1, l.t2, l.t3, cur]
+      .filter(v => v != null && !isNaN(v));
+
+    const ctxShort = document.getElementById('chart-' + panel + '-short').getContext('2d');
+    const ctxLong  = document.getElementById('chart-' + panel + '-long').getContext('2d');
+
+    _panels[panel].chartShort = new Chart(ctxShort, makeChartOptions(shortPrices, buildShortAnnotations(s, cur)));
+    _panels[panel].chartLong  = new Chart(ctxLong,  makeChartOptions(longPrices,  buildLongAnnotations(l, cur)));
+  }
+
+  function buildShortAnnotations(s, cur) {
     const ann = {};
     ann.shortEntry = zone(s.entry_low, s.entry_high, 'rgba(229,57,53,0.22)', 'rgba(229,57,53,0.5)');
-    ann.longEntry  = zone(l.entry_low, l.entry_high, 'rgba(67,160,71,0.18)', 'rgba(67,160,71,0.45)');
     ann.shortSL    = hline(s.stop_loss, '#e53935', [6, 4], 'SL ' + fmt(s.stop_loss));
     ann.entryMid   = hline((s.entry_low + s.entry_high) / 2, '#f5a623', [4, 4],
                       'ENTRY ' + fmt(s.entry_low) + '–' + fmt(s.entry_high));
@@ -474,6 +500,20 @@
     });
     ann.curPrice = hline(cur, '#6688aa', [], 'Nuv. ' + fmt(cur));
     ann.shortTag = tag((s.entry_low + s.entry_high) / 2, '#e53935', 'SHORT');
+    return ann;
+  }
+
+  function buildLongAnnotations(l, cur) {
+    const ann = {};
+    ann.longEntry = zone(l.entry_low, l.entry_high, 'rgba(67,160,71,0.18)', 'rgba(67,160,71,0.45)');
+    ann.longSL    = hline(l.stop_loss, '#e53935', [6, 4], 'SL ' + fmt(l.stop_loss));
+    ann.entryMid  = hline((l.entry_low + l.entry_high) / 2, '#f5a623', [4, 4],
+                      'ENTRY ' + fmt(l.entry_low) + '–' + fmt(l.entry_high));
+    ['t1', 't2', 't3'].forEach((t, i) => {
+      if (l[t] == null) return;
+      ann['lT' + (i + 1)] = hline(l[t], '#43a047', [8, 4], 'T' + (i + 1) + ' ' + fmt(l[t]));
+    });
+    ann.curPrice = hline(cur, '#6688aa', [], 'Nuv. ' + fmt(cur));
     ann.longTag  = tag((l.entry_low + l.entry_high) / 2, '#43a047', 'LONG');
     return ann;
   }
