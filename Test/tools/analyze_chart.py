@@ -39,8 +39,10 @@ ANALYSIS_PROMPT = """Analysera detta handeldiagram noggrant och returnera ett JS
     "stop_loss": number,
     "t1": number,
     "t2": number,
+    "t3": number,
     "rr_t1": "string — t.ex. '1.5:1'",
-    "rr_t2": "string — t.ex. '2.5:1'"
+    "rr_t2": "string — t.ex. '2.5:1'",
+    "rr_t3": "string — t.ex. '3:1'"
   },
   "current_price": number,
   "summary": "string — sammanfattning på svenska, 3-5 meningar"
@@ -50,8 +52,7 @@ Regler:
 - Alla priser ska vara exakta numeriska värden utan enheter
 - All text ska vara på svenska
 - current_price är det senaste synliga priset i diagrammet
-- t3 i short_scenario kan vara null om bara två targets är tydliga
-- rr_t3 kan vara null om t3 är null
+- t3 och rr_t3 kan vara null i både short och long om bara två targets är tydliga
 - Beräkna R:R korrekt: för SHORT är risk = stop_loss - entry_mid, reward = entry_mid - target
 - Om flera diagram visas, integrera alla tidsperspektiv i din analys
 - chart_title och instrument_info ska extraheras från vad som syns i diagrammet
@@ -95,8 +96,10 @@ GOLD_ANALYSIS_PROMPT = """Analysera dessa bilder för guldhandel. Om DXY- eller 
     "stop_loss": number,
     "t1": number,
     "t2": number,
+    "t3": number,
     "rr_t1": "string",
-    "rr_t2": "string"
+    "rr_t2": "string",
+    "rr_t3": "string"
   },
   "current_price": number,
   "summary": "string — sammanfattning 3-5 meningar. Ange vilket scenario som är primärt baserat på dominerande trend. Om DXY eller DFII10 är synliga, nämn hur de stödjer eller motverkar scenariot."
@@ -113,7 +116,7 @@ Regler:
 - Alla priser ska vara exakta numeriska värden utan enheter
 - All text ska vara på svenska
 - current_price är det senaste synliga priset i guldchartet
-- t3 och rr_t3 kan vara null om bara två targets är tydliga
+- t3 och rr_t3 kan vara null i både short och long om bara två targets är tydliga
 - Beräkna R:R korrekt: SHORT: risk = stop_loss − entry_mid, reward = entry_mid − target; LONG: risk = entry_mid − stop_loss, reward = target − entry_mid
 - Returnera ENDAST det rå JSON-objektet, inga markdown-kodblock, inga extra ord"""
 
@@ -154,8 +157,10 @@ NASDAQ_ANALYSIS_PROMPT = """Analysera detta Nasdaq-diagram. Börja obligatoriskt
     "stop_loss": number,
     "t1": number,
     "t2": number,
+    "t3": number,
     "rr_t1": "string",
-    "rr_t2": "string"
+    "rr_t2": "string",
+    "rr_t3": "string"
   },
   "current_price": number,
   "summary": "string — sammanfattning 3-5 meningar. Ange vilket scenario som är primärt baserat på dominerande trend och varför."
@@ -170,7 +175,7 @@ Regler:
 - Alla priser ska vara exakta numeriska värden utan enheter
 - All text ska vara på svenska
 - current_price är det senaste synliga priset i diagrammet
-- t3 och rr_t3 kan vara null om bara två targets är tydliga
+- t3 och rr_t3 kan vara null i både short och long om bara två targets är tydliga
 - Beräkna R:R korrekt: SHORT: risk = stop_loss − entry_mid, reward = entry_mid − target; LONG: risk = entry_mid − stop_loss, reward = target − entry_mid
 - Om flera diagram visas, integrera alla tidsperspektiv
 - Returnera ENDAST det rå JSON-objektet, inga markdown-kodblock, inga extra ord"""
