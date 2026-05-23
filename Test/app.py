@@ -274,5 +274,16 @@ def send_email():
     return jsonify({"ok": True})
 
 
+@app.errorhandler(404)
+def not_found(_e):
+    if request.is_json or request.path.startswith("/send-email") or request.path.startswith("/analyze"):
+        return jsonify({"error": "Endpoint hittades inte (404)"}), 404
+    return redirect(url_for("login"))
+
+@app.errorhandler(500)
+def server_error(e):
+    return jsonify({"error": f"Serverfel: {e}"}), 500
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
