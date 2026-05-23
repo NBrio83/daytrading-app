@@ -206,7 +206,7 @@ def analyze_chart_image(image_data_list: list, panel: str = "a") -> dict:
     content.append({"type": "text", "text": prompt})
 
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-opus-4-7",
         max_tokens=2048,
         system=system,
         messages=[{"role": "user", "content": content}],
