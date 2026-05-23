@@ -205,6 +205,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(analysis)
       });
+      if (resp.status === 401) { window.location.href = '/login'; return; }
       const json = await resp.json();
       if (!resp.ok) throw new Error(json.error || 'Okänt fel');
       status.style.color = '#43a047';

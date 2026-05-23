@@ -99,6 +99,8 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not session.get("logged_in"):
+            if request.is_json or request.path.startswith("/send-email") or request.path.startswith("/analyze"):
+                return jsonify({"error": "Ej inloggad"}), 401
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated
