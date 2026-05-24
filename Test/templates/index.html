@@ -178,6 +178,16 @@
         </div>
       </div>
 
+      <!-- ══════ EKONOMISK KALENDER ══════ -->
+      <div class="calendar-col">
+        <div class="panel-label">Ekonomisk kalender</div>
+        <div class="calendar-card">
+          <div class="cal-meta" id="calMeta">Laddar kalender&hellip;</div>
+          <div id="calContent"></div>
+          <button class="cal-refresh" id="calRefreshBtn" onclick="calRefresh()">Uppdatera nu</button>
+        </div>
+      </div>
+
     </div><!-- /panels-grid -->
   </div>
 
@@ -552,6 +562,95 @@
       }
     };
   }
+
+  // ── Economic calendar ────────────────────────────────────────────────────
+  const _svDays = ['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'];
+  const _svMonths = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+
+  function _fmtDate(isoDate) {
+    const d = new Date(isoDate + 'T00:00:00');
+    if (isNaN(d)) return isoDate;
+    return _svDays[d.getDay()] + ' ' + d.getDate() + ' ' + _svMonths[d.getMonth()];
+  }
+
+  function _renderCalendar(data) {
+    const meta    = document.getElementById('calMeta');
+    const content = document.getElementById('calContent');
+
+    if (data.fetched_at) {
+      const ts = data.fetched_at.substring(0, 16).replace('T', ' ');
+      meta.textContent = 'Uppdaterad: ' + ts + ' (GMT+02:00)';
+    } else {
+      meta.textContent = 'Ingen data hämtad ännu.';
+    }
+
+    const events = data.events || [];
+    if (!events.length) {
+      content.innerHTML = '<p class="cal-error">Inga händelser hittades. Klicka Uppdatera nu.</p>';
+      return;
+    }
+
+    // Group by date
+    const byDate = {};
+    for (const ev of events) {
+      const key = ev.date || 'okänt';
+      if (!byDate[key]) byDate[key] = [];
+      byDate[key].push(ev);
+    }
+
+    let html = '';
+    for (const [date, evs] of Object.entries(byDate)) {
+      const label = date.match(/^\d{4}-\d{2}-\d{2}$/) ? _fmtDate(date) : date;
+      html += `<div class="cal-day-header">${label}</div>`;
+      for (const ev of evs) {
+        const imp   = Math.min(ev.importance || 2, 3);
+        const stars = '★'.repeat(imp) + '☆'.repeat(3 - imp);
+        const cls   = imp === 3 ? 'cal-stars high' : 'cal-stars medium';
+        html += `
+          <div class="cal-event">
+            <div class="cal-event-top">
+              <span class="cal-time">${ev.time || '—'}</span>
+              <span class="${cls}">${stars}</span>
+              <span class="cal-currency">${ev.currency || ''}</span>
+            </div>
+            <div class="cal-event-name">${ev.event || ''}</div>
+          </div>`;
+      }
+    }
+    content.innerHTML = html;
+  }
+
+  async function calLoad() {
+    try {
+      const resp = await fetch('/api/economic-calendar');
+      if (resp.status === 401) return; // not logged in yet
+      const data = await resp.json();
+      _renderCalendar(data);
+    } catch {
+      document.getElementById('calContent').innerHTML =
+        '<p class="cal-error">Kunde inte nå servern.</p>';
+      document.getElementById('calMeta').textContent = '';
+    }
+  }
+
+  async function calRefresh() {
+    const btn = document.getElementById('calRefreshBtn');
+    btn.disabled = true;
+    btn.textContent = 'Hämtar…';
+    try {
+      const resp = await fetch('/api/economic-calendar/refresh', { method: 'POST' });
+      const data = await resp.json();
+      if (data.error) throw new Error(data.error);
+      await calLoad();
+    } catch (e) {
+      document.getElementById('calMeta').textContent = 'Fel: ' + e.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Uppdatera nu';
+    }
+  }
+
+  calLoad();
   </script>
 </body>
 </html>

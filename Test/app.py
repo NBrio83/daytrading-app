@@ -3,11 +3,15 @@ import hmac
 import json
 import base64
 import smtplib
+import atexit
+import pytz
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from functools import wraps
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from dotenv import load_dotenv
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 from tools.analyze_chart import analyze_chart_image
 
 load_dotenv()
@@ -40,6 +44,23 @@ def init_db():
             """)
 
 init_db()
+
+
+# ── Economic calendar scheduler ──────────────────────────────────────────────
+
+def _run_calendar_fetch():
+    try:
+        from tools.fetch_economic_calendar import fetch_calendar
+        fetch_calendar()
+        app.logger.info("Economic calendar updated.")
+    except Exception as exc:
+        app.logger.error("Calendar fetch failed: %s", exc)
+
+_tz_gmt2 = pytz.FixedOffset(120)
+_scheduler = BackgroundScheduler(timezone=_tz_gmt2)
+_scheduler.add_job(_run_calendar_fetch, CronTrigger(hour=6, minute=0, timezone=_tz_gmt2))
+_scheduler.start()
+atexit.register(lambda: _scheduler.shutdown(wait=False))
 
 
 def load_analyses(panel):
@@ -272,6 +293,24 @@ def send_email():
         return jsonify({"error": str(e)}), 500
 
     return jsonify({"ok": True})
+
+
+@app.route("/api/economic-calendar")
+@login_required
+def get_economic_calendar():
+    from tools.fetch_economic_calendar import load_cached
+    return jsonify(load_cached())
+
+
+@app.route("/api/economic-calendar/refresh", methods=["POST"])
+@login_required
+def refresh_economic_calendar():
+    try:
+        from tools.fetch_economic_calendar import fetch_calendar
+        data = fetch_calendar()
+        return jsonify({"ok": True, "count": len(data.get("events", []))})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.errorhandler(404)

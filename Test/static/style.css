@@ -15,7 +15,7 @@ body {
 }
 
 .container {
-  max-width: 1540px;
+  max-width: 1760px;
   margin: 0 auto;
   padding: 40px 20px 60px;
 }
@@ -37,10 +37,10 @@ body {
   line-height: 1;
 }
 
-/* ── Two-panel grid ── */
+/* ── Three-column grid (Guld | Nasdaq | Kalender) ── */
 .panels-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 340px;
   grid-template-rows: auto auto auto auto;
   column-gap: 28px;
   row-gap: 14px;
@@ -503,10 +503,131 @@ body {
   color: #3a5060;
 }
 
+/* ── Economic calendar column ── */
+.calendar-col {
+  grid-column: 3;
+  grid-row: 1 / 5;
+  position: sticky;
+  top: 20px;
+  align-self: start;
+}
+
+.calendar-card {
+  background: rgba(0, 8, 18, 0.82);
+  border: 1px solid rgba(0, 180, 255, 0.22);
+  border-radius: 12px;
+  padding: 20px 18px;
+  backdrop-filter: blur(10px);
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.calendar-card::-webkit-scrollbar { width: 5px; }
+.calendar-card::-webkit-scrollbar-track { background: transparent; }
+.calendar-card::-webkit-scrollbar-thumb { background: rgba(0,180,255,0.25); border-radius: 3px; }
+
+.cal-meta {
+  font-size: 11px;
+  color: #3a6070;
+  margin-bottom: 14px;
+}
+
+.cal-refresh {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid rgba(0,180,255,0.3);
+  border-radius: 6px;
+  color: #00B4FF;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cal-refresh:hover { background: rgba(0,180,255,0.1); }
+.cal-refresh:disabled { opacity: 0.4; cursor: default; }
+
+.cal-day-header {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #60dcff;
+  border-bottom: 1px solid rgba(0,180,255,0.15);
+  padding: 10px 0 5px;
+  margin-top: 10px;
+}
+.cal-day-header:first-child { margin-top: 0; }
+
+.cal-event {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.cal-event:last-child { border-bottom: none; }
+
+.cal-event-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.cal-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: #aac4cc;
+  min-width: 38px;
+}
+
+.cal-stars {
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.cal-stars.high   { color: #e53935; }
+.cal-stars.medium { color: #f5a623; }
+
+.cal-currency {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(255,255,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.cal-event-name {
+  font-size: 12px;
+  color: #c9d1d9;
+  line-height: 1.35;
+}
+
+.cal-error {
+  color: #777;
+  font-size: 13px;
+  text-align: center;
+  padding: 20px 0;
+}
+
 /* ── Mobile ── */
+@media (max-width: 1100px) {
+  .panels-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .calendar-col {
+    grid-column: 1 / 3;
+    grid-row: auto;
+    position: static;
+  }
+  .calendar-card { max-height: none; }
+}
+
 @media (max-width: 900px) {
   .panels-grid {
     grid-template-columns: 1fr;
+  }
+  .calendar-col {
+    grid-column: 1;
   }
 }
 
